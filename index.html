@@ -1,139 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Custom OK.ru Video Controls</title>
+  <meta charset="UTF-8">
+  <title>Custom OK.ru Player with Watermark</title>
   <style>
-    body { margin: 0; background: #000; }
-    .video-container {
-      position: relative;
-      width: 100%;
-      max-width: 853px;
-      margin: auto;
-      background: #000;
+    body {
+      margin: 0;
+      background: black;
     }
+
+    .video-wrapper {
+      position: relative;
+      width: 853px;
+      height: 480px;
+      margin: auto;
+      background: black;
+    }
+
     iframe {
       width: 100%;
-      height: 480px;
-      pointer-events: none; /* Prevent user interaction */
+      height: 100%;
+      pointer-events: none; /* Disable default controls */
     }
+
+    .overlay-blocker {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+    }
+
     .controls {
       position: absolute;
       bottom: 10px;
-      left: 0;
-      width: 100%;
+      left: 10px;
       display: flex;
-      justify-content: center;
       gap: 10px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px;
+      border-radius: 8px;
       opacity: 1;
       transition: opacity 0.5s;
-      z-index: 10;
     }
-    .control-btn {
-      background: rgba(0, 0, 0, 0.7);
+
+    .controls button {
+      background: white;
       border: none;
-      color: white;
-      padding: 10px;
+      padding: 5px 10px;
+      border-radius: 4px;
       cursor: pointer;
-      border-radius: 5px;
-      font-size: 16px;
+      font-weight: bold;
     }
+
+    .hidden-controls {
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    /* Watermark Styling */
     .watermark {
       position: absolute;
       top: 10px;
       right: 10px;
+      z-index: 9;
       color: white;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      font-size: 14px;
-      border-radius: 5px;
-      z-index: 10;
+      font-size: 18px;
+      opacity: 0.7;
+      pointer-events: none;
+      user-select: none;
     }
-    .instruction-modal {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 20;
-    }
-    .instruction-content {
-      background: #222;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 90%;
-      text-align: center;
-    }
-    .hide { display: none; }
   </style>
 </head>
 <body>
-<div class="video-container" id="videoContainer">
-  <iframe id="videoIframe" src="https://ok.ru/videoembed/9252831698648?autoplay=1" frameborder="0" allow="autoplay" allowfullscreen></iframe>
 
-  <div class="watermark">MyWatermark</div>
+<div class="video-wrapper" id="videoWrapper">
+  <!-- OK.ru Video -->
+  <iframe id="okVideo" src="//ok.ru/videoembed/9252831698648?autoplay=1" frameborder="0" allow="autoplay" allowfullscreen></iframe>
+  
+  <!-- Overlay blocker -->
+  <div class="overlay-blocker"></div>
 
-  <div class="controls" id="controls">
-    <button class="control-btn" id="playPause">Pause</button>
-    <button class="control-btn" id="volumeToggle">Mute</button>
-    <button class="control-btn" id="fullscreenToggle">Fullscreen</button>
-  </div>
-</div>
+  <!-- Watermark -->
+  <div class="watermark">My Watermark</div>
 
-<div class="instruction-modal" id="instructionModal">
-  <div class="instruction-content">
-    <p>Welcome! Use the custom controls below the video to play/pause, adjust volume, or toggle fullscreen. Controls auto-hide for immersive viewing.</p>
-    <button class="control-btn" onclick="document.getElementById('instructionModal').classList.add('hide')">Got it</button>
+  <!-- Custom Controls -->
+  <div class="controls" id="customControls">
+    <button id="playPause">Pause</button>
+    <button id="volumeToggle">Mute</button>
+    <button id="fullscreenToggle">Fullscreen</button>
   </div>
 </div>
 
 <script>
-  const controls = document.getElementById('controls');
-  const container = document.getElementById('videoContainer');
-  const iframe = document.getElementById('videoIframe');
+  const playPauseBtn = document.getElementById('playPause');
+  const volumeToggleBtn = document.getElementById('volumeToggle');
+  const fullscreenToggleBtn = document.getElementById('fullscreenToggle');
+  const videoWrapper = document.getElementById('videoWrapper');
+  const controls = document.getElementById('customControls');
+  const iframe = document.getElementById('okVideo');
 
-  let isMuted = false;
   let isPlaying = true;
+  let isMuted = false;
+  let autoHideTimeout;
 
-  // Play/Pause button logic (visual only due to iframe restrictions)
-  document.getElementById('playPause').addEventListener('click', () => {
-    isPlaying = !isPlaying;
-    document.getElementById('playPause').textContent = isPlaying ? 'Pause' : 'Play';
-  });
+  /** AUTO HIDE CONTROLS **/
+  function showControls() {
+    controls.classList.remove('hidden-controls');
+    clearTimeout(autoHideTimeout);
+    autoHideTimeout = setTimeout(() => {
+      controls.classList.add('hidden-controls');
+    }, 2000);
+  }
 
-  // Volume toggle button logic (visual only due to iframe restrictions)
-  document.getElementById('volumeToggle').addEventListener('click', () => {
-    isMuted = !isMuted;
-    document.getElementById('volumeToggle').textContent = isMuted ? 'Unmute' : 'Mute';
-  });
-
-  // Fullscreen toggle
-  document.getElementById('fullscreenToggle').addEventListener('click', () => {
+  /** FULLSCREEN TOGGLE **/
+  fullscreenToggleBtn.addEventListener('click', () => {
     if (!document.fullscreenElement) {
-      container.requestFullscreen().then(() => {
-        screen.orientation.lock('landscape').catch(() => {});
+      videoWrapper.requestFullscreen().then(() => {
+        if (screen.orientation) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
       });
     } else {
       document.exitFullscreen();
+      if (screen.orientation) {
+        screen.orientation.unlock?.();
+      }
     }
   });
 
-  // Auto-hide controls
-  let hideTimeout;
-  function resetHideTimer() {
-    controls.style.opacity = 1;
-    clearTimeout(hideTimeout);
-    hideTimeout = setTimeout(() => {
-      controls.style.opacity = 0;
-    }, 3000);
-  }
+  /** PLAY/PAUSE (reload workaround) **/
+  playPauseBtn.addEventListener('click', () => {
+    if (isPlaying) {
+      iframe.src = iframe.src.replace('autoplay=1', 'autoplay=0');
+      playPauseBtn.textContent = 'Play';
+      isPlaying = false;
+    } else {
+      iframe.src = iframe.src.replace('autoplay=0', 'autoplay=1');
+      playPauseBtn.textContent = 'Pause';
+      isPlaying = true;
+    }
+  });
 
-  container.addEventListener('mousemove', resetHideTimer);
-  resetHideTimer();
+  /** VOLUME (simulated toggle, not muting real audio) **/
+  volumeToggleBtn.addEventListener('click', () => {
+    if (isMuted) {
+      volumeToggleBtn.textContent = 'Mute';
+      isMuted = false;
+    } else {
+      volumeToggleBtn.textContent = 'Unmute';
+      isMuted = true;
+    }
+  });
+
+  /** MOUSEMOVE - SHOW CONTROLS **/
+  document.addEventListener('mousemove', () => {
+    if (document.fullscreenElement === videoWrapper || !document.fullscreenElement) {
+      showControls();
+    }
+  });
+
+  /** FULLSCREEN CHANGE **/
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      showControls();
+    } else {
+      controls.classList.remove('hidden-controls');
+      clearTimeout(autoHideTimeout);
+    }
+  });
+
+  // Initial hide setup
+  videoWrapper.addEventListener('mousemove', showControls);
 </script>
+
 </body>
 </html>
