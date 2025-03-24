@@ -9,28 +9,11 @@
       margin: 0;
       background: #2c2c2c;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      justify-content: flex-start;
       height: 100vh;
       overflow: hidden;
       font-family: 'Segoe UI', sans-serif;
-      padding-top: 20px;
-    }
-    .logo {
-      width: 150px;
-      margin-bottom: 10px;
-      animation: fadeInDown 1s ease;
-    }
-    @keyframes fadeInDown {
-      0% {
-        opacity: 0;
-        transform: translateY(-50px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
     }
     .player-container {
       position: relative;
@@ -41,12 +24,38 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
-      margin-top: -10px; /* Move video up */
     }
     iframe {
       width: 100%;
       height: 100%;
-      pointer-events: none; /* lock default controls */
+      pointer-events: none;
+    }
+    .streaming-header {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 15px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      z-index: 10;
+      animation: pulse 1.5s infinite;
+    }
+    .live-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 10px;
+      background-color: red; /* Default: Offline */
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
     }
     .controls {
       position: absolute;
@@ -79,15 +88,15 @@
     }
     .watermark {
       position: absolute;
-      top: 15px;
+      bottom: 15px;
       left: 15px;
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      font-size: 14px;
       z-index: 10;
-      opacity: 0.8;
-    }
-    .watermark img {
-      width: 60px;
-      border-radius: 50%;
-      border: 2px solid #fff;
+      border-radius: 8px;
+      font-weight: bold;
     }
     .instructions-modal {
       position: fixed;
@@ -133,33 +142,30 @@
 </head>
 <body>
 
-  <!-- Logo on top -->
-  <img src="/mnt/data/SEVENTEEN.png" alt="Seventeen Zone PH Logo" class="logo" />
+<div class="player-container" id="player">
+  <iframe src="//ok.ru/videoembed/9252831698648?autoplay=1" frameborder="0" allow="autoplay"></iframe>
 
-  <div class="player-container" id="player">
-    <iframe src="//ok.ru/videoembed/9252831698648?autoplay=1" frameborder="0" allow="autoplay"></iframe>
-    
-    <!-- Watermark Logo -->
-    <div class="watermark">
-      <img src="/mnt/data/SEVENTEEN.png" alt="Watermark" />
-    </div>
-    
-    <!-- Custom Controls -->
-    <div class="controls" id="controls">
-      <button id="playPause">⏸️</button>
-      <button id="volume">🔊</button>
-      <button id="fullscreen">⛶</button>
-    </div>
+  <div class="streaming-header">
+    STREAMING
+    <div class="live-indicator" id="liveIndicator"></div>
   </div>
 
-  <!-- Instructions Modal -->
-  <div class="instructions-modal" id="modal">
-    <div class="instructions-content">
-      <h3>Instructions</h3>
-      <p>Use the custom controls to play/pause, toggle volume, and fullscreen the video.</p>
-      <button onclick="closeModal()">Got it!</button>
-    </div>
+  <div class="watermark">My Watermark</div>
+
+  <div class="controls" id="controls">
+    <button id="playPause">⏸️</button>
+    <button id="volume">🔊</button>
+    <button id="fullscreen">⛶</button>
   </div>
+</div>
+
+<div class="instructions-modal" id="modal">
+  <div class="instructions-content">
+    <h3>Instructions</h3>
+    <p>Use the custom controls to play/pause, toggle volume, and fullscreen the video.</p>
+    <button onclick="closeModal()">Got it!</button>
+  </div>
+</div>
 
 <script>
   const player = document.getElementById('player');
@@ -168,6 +174,7 @@
   const volumeBtn = document.getElementById('volume');
   const fullscreenBtn = document.getElementById('fullscreen');
   const iframe = player.querySelector('iframe');
+  const liveIndicator = document.getElementById('liveIndicator');
   let isPlaying = true;
   let isMuted = false;
   let hideTimeout;
@@ -214,6 +221,21 @@
   function closeModal() {
     document.getElementById('modal').style.display = 'none';
   }
+
+  // TOGGLE ONLINE/OFFLINE
+  function setLiveStatus(isOnline) {
+    if (isOnline) {
+      liveIndicator.style.backgroundColor = 'green';
+    } else {
+      liveIndicator.style.backgroundColor = 'red';
+    }
+  }
+
+  // Example: Set to online
+  setLiveStatus(true);
+
+  // You can manually toggle:
+  // setLiveStatus(false);
 </script>
 
 </body>
