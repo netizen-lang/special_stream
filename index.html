@@ -36,12 +36,8 @@
       color: #e74c3c;
     }
     @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
     .player-container {
       position: relative;
@@ -169,25 +165,83 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const player = document.getElementById('player');
-  const controls = document.getElementById('controls');
-  const playPauseBtn = document.getElementById('playPause');
-  const volumeBtn = document.getElementById('volume');
-  const fullscreenBtn = document.getElementById('fullscreen');
-  const iframe = player.querySelector('iframe');
-  const modal = document.getElementById('modal');
-  const gotItButton = document.getElementById('gotItButton');
-  const liveIndicator = document.getElementById('liveIndicator');
-  let isPlaying = true;
-  let isMuted = false;
-  let hideTimeout;
+  document.addEventListener('DOMContentLoaded', () => {
+    const player = document.getElementById('player');
+    const controls = document.getElementById('controls');
+    const playPauseBtn = document.getElementById('playPause');
+    const volumeBtn = document.getElementById('volume');
+    const fullscreenBtn = document.getElementById('fullscreen');
+    const iframe = player.querySelector('iframe');
+    const modal = document.getElementById('modal');
+    const gotItButton = document.getElementById('gotItButton');
+    const liveIndicator = document.getElementById('liveIndicator');
 
-  // Function to close the modal
-  function closeModal() {
-    modal.style.display = 'none';
-  }
+    let isPlaying = true;
+    let isMuted = false;
+    let hideTimeout;
 
-  // Attach event listener
-::contentReference[oaicite:6]{index=6}
- 
+    // Auto-hide controls
+    function showControls() {
+      controls.style.opacity = 1;
+      clearTimeout(hideTimeout);
+      hideTimeout = setTimeout(() => {
+        controls.style.opacity = 0;
+      }, 3000);
+    }
+    player.addEventListener('mousemove', showControls);
+    player.addEventListener('click', showControls);
+    showControls();
+
+    // Play/Pause button
+    playPauseBtn.addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
+      if (isPlaying) {
+        const src = iframe.src;
+        iframe.src = '';
+        setTimeout(() => {
+          iframe.src = src;
+        }, 100);
+      }
+    });
+
+    // Volume button
+    volumeBtn.addEventListener('click', () => {
+      isMuted = !isMuted;
+      volumeBtn.textContent = isMuted ? '🔇' : '🔊';
+    });
+
+    // Fullscreen button
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        player.requestFullscreen().then(() => {
+          screen.orientation.lock('landscape').catch(() => {});
+        }).catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Got it! button - close modal
+    gotItButton.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // Optional: Example live status toggle
+    function toggleLiveStatus(isOnline) {
+      if (isOnline) {
+        liveIndicator.textContent = 'Online';
+        liveIndicator.classList.remove('offline-indicator');
+        liveIndicator.classList.add('live-indicator');
+      } else {
+        liveIndicator.textContent = 'Offline';
+        liveIndicator.classList.remove('live-indicator');
+        liveIndicator.classList.add('offline-indicator');
+      }
+    }
+    // Example usage: toggleLiveStatus(true or false);
+  });
+</script>
+
+</body>
+</html>
